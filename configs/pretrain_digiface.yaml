@@ -1,0 +1,38 @@
+# Stage 1: ImageNet ResNet50 -> 10k DigiFace-1M synthetic identities (720k images) jointly with the 427 real
+# LFW *train* identities as extra classes. Real faces in stage 1 anchor the features to the real-photo domain;
+# val/test identities are never included.
+#
+# v1 (kept for the record, see README): 4k synthetic identities only, 16-epoch schedule; real-face val AUC
+# peaked at epoch 5 while synthetic train accuracy reached 99% -> overfitting to the synthetic identities.
+# v2 therefore uses 2.5x more identities and a shorter schedule whose cosine LR decay completes.
+name: r50_digiface
+dataset: digiface+lfw
+digiface_max_ids: null          # null = every indexed identity (10,000)
+model:
+  backbone: resnet50
+  emb_dim: 512
+  dropout: 0.4
+  keep_maxpool: false
+init_checkpoint: null           # null = ImageNet weights
+loss:
+  kind: arcface_triplet         # ArcFace (s, m) + 0.1 * batch-hard triplet
+  s: 64.0
+  m: 0.5
+  margin_warmup_epochs: 1
+  triplet_margin: 0.3
+  triplet_weight: 0.1
+sampler: {P: 64, K: 4}          # 256 images / batch, identity-balanced
+batches_per_epoch: 1500         # 384k images per "epoch"
+optim:
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 0.0005
+  backbone_lr_mult: 1.0
+  head_lr_mult: 1.0
+  warmup_epochs: 0.5
+epochs: 10
+freeze_bn_epochs: 0
+augment: heavy
+num_workers: 10
+seed: 42
+out: checkpoints/r50_digiface.pth

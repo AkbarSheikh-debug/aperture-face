@@ -1,0 +1,31 @@
+# Stage 2: DigiFace-pretrained ResNet50 -> LFW train identities (real faces). Produces the submission model.
+name: r50_lfw_finetune
+dataset: lfw
+model:
+  backbone: resnet50
+  emb_dim: 512
+  dropout: 0.4
+  keep_maxpool: false
+init_checkpoint: checkpoints/r50_digiface.pth
+loss:
+  kind: arcface_triplet
+  s: 32.0                       # fewer classes than stage 1 -> smaller scale
+  m: 0.4
+  margin_warmup_epochs: 1
+  triplet_margin: 0.3
+  triplet_weight: 0.1
+sampler: {P: 32, K: 4}          # identity-balanced batches of 128
+batches_per_epoch: 60
+optim:
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+  backbone_lr_mult: 0.1         # gentle on the pretrained body, small LFW train set overfits easily
+  head_lr_mult: 10.0            # new ArcFace class centres for the LFW train identities
+  warmup_epochs: 1
+epochs: 20
+freeze_bn_epochs: 1
+augment: heavy
+num_workers: 8
+seed: 42
+out: checkpoints/best_model.pth

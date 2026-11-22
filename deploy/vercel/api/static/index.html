@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aperture">
+<title>Aperture — Face recognition</title>
+<meta name="description" content="Face verification and identification with a ResNet embedding model. Runs on a CPU; your face data stays in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect width='30' height='30' rx='7' fill='%23000'/%3E%3Ccircle cx='15' cy='15' r='11' fill='none' stroke='%23F5F5F7' stroke-width='2'/%3E%3Ccircle cx='15' cy='15' r='3' fill='%23FF4F8B'/%3E%3C/svg%3E">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+@property --p{syntax:'<number>';inherits:false;initial-value:0}
+:root{
+  --bg:#000; --surf:#111113; --line:#27272A; --line2:#3F3F46; --hair:#1F1F22;
+  --ink:#F5F5F7; --ink2:#D4D4D8; --mute:#A1A1AA; --dim:#71717A;
+  --accent:#FF4F8B; --accent-soft:#FFB3CC; --ok:#34D399; --ok-ink:#6EE7B7; --warn:#FBBF24; --bad:#F87171;
+  --head:'Space Grotesk',system-ui,sans-serif; --body:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--body);font-variant-numeric:tabular-nums}
+body.enrolling{overflow:hidden}
+body.enrolling .controls{display:none}
+button,input{font:inherit;color:inherit}
+button{-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+a{color:#FF7DA8}a:hover{color:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{max-width:1360px;margin:0 auto;padding:0 40px}
+
+/* ---------- header ---------- */
+header{position:relative}
+.head{max-width:1360px;margin:0 auto;padding:18px 40px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand span{font:600 20px var(--head);letter-spacing:-.01em}
+#status{margin-left:auto;display:flex;align-items:center;gap:14px;font:400 13px var(--head);color:var(--mute);white-space:nowrap}
+#status .on{display:flex;align-items:center;gap:6px;color:var(--ink)}
+#status i{width:8px;height:8px;border-radius:50%;background:var(--dim)}
+#status .on i{background:var(--ok)} #status .off i{background:var(--bad)} #status .off{display:flex;align-items:center;gap:6px;color:var(--ink)}
+#status b{color:var(--ink);font-weight:600}
+
+/* ---------- tabs: centred in the header on desktop, bottom bar on phones ---------- */
+.tabs{display:flex;gap:28px;font:600 13px var(--head);letter-spacing:.12em;position:absolute;left:50%;top:18px;transform:translateX(-50%)}
+.tabs button{height:36px;border:0;background:transparent;color:var(--mute);letter-spacing:inherit;font:inherit;cursor:pointer;position:relative;padding:0;white-space:nowrap}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{color:var(--accent)}
+.tabs button[aria-selected=true]::after{content:"";position:absolute;left:50%;bottom:-3px;width:5px;height:5px;margin-left:-2px;border-radius:50%;background:var(--accent)}
+
+/* ---------- layout ---------- */
+main{max-width:1360px;margin:0 auto;padding:0 40px 56px}
+.cols{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.cam-col{flex:999 1 640px;min-width:0}
+aside{flex:1 1 340px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.card{padding:20px;border-radius:14px;background:var(--surf)}
+.lab{font:600 12px var(--body);letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+
+/* ---------- camera ---------- */
+.stage{position:relative;aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:#111113}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+.thirds{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:33.333% 33.333%;background-position:-1px -1px}
+.stage.guiding .thirds,.stage.nocam .thirds{display:none}
+.livebadge{position:absolute;left:18px;top:16px;display:flex;align-items:center;gap:8px;font:600 13px var(--head);letter-spacing:.08em;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.livebadge i{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.chip{position:absolute;left:0;right:0;bottom:0;padding:40px 20px 16px;background:linear-gradient(transparent,rgba(0,0,0,.78));text-align:center;font:500 16px var(--body);pointer-events:none}
+.chip.ok{color:var(--ok-ink)} .chip.bad{color:var(--warn)}
+.stage.guiding .chip{display:none}
+.off{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:28px;background:#111113;color:var(--ink2)}
+.stage.nocam .off{display:grid}
+.off b{display:block;font:600 20px var(--head);margin-bottom:6px;color:var(--ink)}
+.off .small{color:var(--mute);font-size:14px;max-width:34ch;margin:0 auto}
+
+/* guided enrolment overlay */
+.guide{position:absolute;inset:0;display:none;overflow:hidden}
+.guide.on{display:block}
+.stage{container-type:size}
+.oval{position:absolute;left:50%;top:47%;height:62%;height:min(62cqh,76cqw);aspect-ratio:.77;transform:translate(-50%,-50%);border-radius:50%;border:3px solid rgba(255,255,255,.25);box-shadow:0 0 0 100vmax rgba(0,0,0,.6);transition:border-color .15s,background-color .15s}
+.oval.good{border-color:rgba(52,211,153,.7)}
+.oval.done{border-color:var(--ok);background:rgba(52,211,153,.18)}
+.ring{position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),transparent 0);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));transition:--p .15s linear}
+.oval.done .ring{background:conic-gradient(var(--ok) 100%,transparent 0)}
+.garrow{position:absolute;color:#fff;display:none}
+.garrow svg{display:block}
+.garrow[data-dir=up]{display:block;bottom:100%;left:50%;margin-bottom:12px;transform:translateX(-50%)}
+.garrow[data-dir=down]{display:block;top:100%;left:50%;margin-top:12px;transform:translateX(-50%) rotate(180deg)}
+.garrow[data-dir=left]{display:block;right:100%;top:50%;margin-right:14px;transform:translateY(-50%) rotate(-90deg)}
+.garrow[data-dir=right]{display:block;left:100%;top:50%;margin-left:14px;transform:translateY(-50%) rotate(90deg)}
+.gtop{position:absolute;left:16px;right:16px;top:16px;display:flex;align-items:center;gap:10px}
+.gx{width:40px;height:40px;border:0;border-radius:50%;background:rgba(0,0,0,.55);color:var(--ink);cursor:pointer;display:grid;place-items:center;flex:none}
+.gseg{flex:1;display:flex;justify-content:center;gap:6px}
+.gseg span{width:22px;height:4px;border-radius:2px;background:rgba(245,245,247,.25)}
+.gseg .done{background:var(--ink)} .gseg .cur{background:var(--accent)} .gseg .skip{background:rgba(245,245,247,.45)}
+#gcount{width:40px;text-align:right;font:600 13px var(--head)}
+.gcap{position:absolute;left:20px;right:20px;bottom:22px;text-align:center;text-shadow:0 1px 10px rgba(0,0,0,.7)}
+#ginstr{font:600 26px/1.2 var(--head);letter-spacing:-.01em}
+#ghint{font-size:14px;color:var(--ink2);margin-top:6px;min-height:21px}
+#gnote{margin-top:8px;font-size:12px;color:var(--mute)}
+.gpanel{padding:18px 4px 4px}
+.gpanel .steps{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 22px;font:600 12px var(--head);letter-spacing:.12em;text-transform:uppercase}
+.gpanel .steps span{color:var(--mute)} .gpanel .steps .cur{color:var(--accent)} .gpanel .steps .pend{color:var(--dim)} .gpanel .steps .skip{color:var(--dim);text-decoration:line-through}
+.grow{margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center}
+.grow .n{font-size:13px;color:var(--mute)}
+.shutter-ghost{width:64px;height:64px;border-radius:50%;border:3px solid rgba(245,245,247,.4);padding:3px}
+.shutter-ghost span{display:block;width:100%;height:100%;border-radius:50%;background:rgba(245,245,247,.15)}
+
+/* controls under the camera */
+.controls{margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px}
+.enrol{display:flex;gap:8px;justify-self:start;flex-wrap:wrap}
+.pill{height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:999px;background:transparent;color:var(--ink);font:500 14px var(--body);cursor:pointer;white-space:nowrap;transition:background .12s}
+.pill:hover{background:#18181B} .pill.quiet{border-color:var(--line);color:var(--mute)}
+.pill.sm{height:40px;padding:0 14px}
+.pill:disabled,.shutter:disabled,.switch:disabled{opacity:.4;cursor:not-allowed}
+.shutter{width:76px;height:76px;border-radius:50%;border:4px solid var(--ink);background:transparent;padding:4px;cursor:pointer}
+.shutter span{display:block;width:100%;height:100%;border-radius:50%;background:var(--ink);transition:transform .1s}
+.shutter:active:not(:disabled) span{transform:scale(.88)}
+.livewrap{justify-self:end;display:flex;align-items:center;gap:12px;font-size:14px;color:var(--ink2)}
+.switch{width:52px;height:30px;border:0;border-radius:999px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch[aria-checked=true]{background:var(--accent)} .switch[aria-checked=true]::after{transform:translateX(22px)}
+.privacy{margin:16px 4px 0;font-size:12px;line-height:1.5;color:var(--mute)}
+
+/* result */
+.score{display:flex;align-items:baseline;gap:10px;margin-top:10px}
+.score b{font:600 56px/1 var(--head);letter-spacing:-.03em}
+.score span{font-size:14px;color:var(--mute)}
+.sentence{margin:8px 0 0;font-size:14px;color:var(--ink2)}
+.sentence b{color:var(--ink);font-weight:600}
+.verdict.ok{color:var(--ok-ink)} .verdict.no{color:var(--warn)}
+.emptyline{margin:10px 0 0;font-size:14px;color:var(--mute)}
+.gauge{position:relative;height:70px;margin-top:18px}
+.gbars{position:absolute;left:0;right:0;top:20px;height:22px;display:flex;gap:2px}
+.gbars span{flex:1;border-radius:1px}
+.gthr{position:absolute;top:12px;width:2px;height:38px;background:var(--ink)}
+.gthrlab{position:absolute;top:-4px;transform:translateX(-50%);font:600 11px var(--head);white-space:nowrap}
+.gval{position:absolute;top:8px;width:0;height:0;transform:translateX(-6px);border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--dim)}
+.gval.ok{border-top-color:var(--ok-ink)} .gval.no{border-top-color:var(--warn)}
+.gends{position:absolute;left:0;right:0;top:50px;display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
+.cands{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+.cand{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--mute)}
+.cand .nm{width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cand.top{color:var(--ink)} .cand.top .nm{font-weight:600}
+.cand .bar{flex:1;height:3px;background:var(--line)} .cand .bar i{display:block;height:3px;background:var(--dim)} .cand.top.ok .bar i{background:var(--ok-ink)}
+.cand .v{width:34px;text-align:right;font-family:var(--head)}
+
+/* enrolled */
+.rowh{display:flex;align-items:center}
+.link{margin-left:auto;height:30px;padding:0 6px;border:0;background:transparent;color:var(--mute);font:500 13px var(--body);cursor:pointer}
+.link:hover{color:var(--ink)}
+.field{display:block;margin-top:12px;font-size:13px;color:var(--mute)}
+input[type=text]{display:block;width:100%;height:44px;margin-top:6px;padding:0 14px;border:1px solid var(--line2);border-radius:10px;background:#000;color:var(--ink);font:400 16px var(--body)}
+input[type=text]::placeholder{color:var(--dim)}
+input[type=text].need{border-color:var(--accent);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.people{list-style:none;padding:0;margin:12px 0 0}
+.people li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--hair)}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:600;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.av.c0{background:#0F2E22;color:var(--ok-ink)} .av.c1{background:#3A1023;color:var(--accent-soft)} .av.c2{background:#1E2433;color:#C7D2FE}
+.people .nm{font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.people .ct{margin-left:auto;font-size:13px;color:var(--mute);white-space:nowrap}
+.people .rm{width:44px;height:44px;margin:-6px -8px -6px 0;border:0;background:transparent;color:var(--dim);cursor:pointer;font-size:15px}
+.people .rm:hover{color:var(--ink)}
+.empty{font-size:14px;color:var(--mute);padding:6px 0 2px}
+.note{font-size:12px;line-height:1.5;color:var(--mute);margin:0 4px}
+
+/* compare */
+h1,h2{margin:0}
+.view-title{font:600 28px/1.15 var(--head);letter-spacing:-.02em}
+.view-sub{margin:8px 0 0;color:var(--mute);max-width:62ch}
+.drops{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+.drop{position:relative;aspect-ratio:4/3;border:1.5px dashed var(--line2);border-radius:14px;display:grid;place-items:center;text-align:center;color:var(--mute);cursor:pointer;overflow:hidden;background:var(--surf);transition:border-color .12s}
+.drop:hover,.drop.over{border-color:var(--accent)}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.drop .tag{position:absolute;left:10px;top:10px;background:rgba(0,0,0,.7);color:var(--ink);font:600 12px var(--head);letter-spacing:.1em;padding:3px 10px;border-radius:99px}
+.drop input{display:none}
+.drop .big{font:600 18px var(--head);color:var(--ink)} .drop small{display:block;margin-top:4px;font-size:13px}
+.vcard{margin-top:14px}
+.vverdict{font:600 36px/1.1 var(--head);letter-spacing:-.02em}
+.vverdict.ok{color:var(--ok-ink)} .vverdict.no{color:var(--warn)}
+.msgbox{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;background:#2A1A12;color:var(--warn)}
+
+/* about */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+.flow .card b{display:block;font:600 16px var(--head);margin-bottom:6px}.flow .card b em{font-style:normal;color:var(--accent);margin-right:8px}
+.flow .card span{font-size:14px;color:var(--mute)}
+.sect{margin-top:36px} .sect h2{font:600 20px var(--head);letter-spacing:-.01em}
+.sect .sub{color:var(--mute);font-size:14px;margin:4px 0 0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px}
+.tile{padding:18px 20px;border-radius:14px;background:var(--surf)}
+.tile .v{font:600 32px/1.1 var(--head);letter-spacing:-.02em}
+.tile .l{font-size:13px;color:var(--mute);margin-top:6px}
+.figs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.figs img{width:100%;border-radius:14px;background:#fff;display:block}
+.figs img.wide{grid-column:1/-1}
+.limits{margin:14px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+.limits li{padding:16px 20px;border-radius:14px;background:var(--surf);font-size:14px;color:var(--ink2)}
+.limits b{color:var(--ink)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(10px);background:var(--ink);color:#000;padding:11px 18px;border-radius:12px;font-weight:500;font-size:14px;opacity:0;pointer-events:none;transition:.2s;max-width:90vw;z-index:80;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ---------- tablet / phone ---------- */
+@media (max-width:980px){
+  .head,main{padding-left:24px;padding-right:24px}
+  .flow{grid-template-columns:1fr 1fr}
+}
+@media (max-width:760px){
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  .head{padding:max(14px,env(safe-area-inset-top)) 16px 10px}
+  .brand span{font-size:18px}
+  #status{gap:10px;font-size:12px} #status .hide-s{display:none}
+  main{padding:0 16px 24px}
+  .cols{gap:16px}
+  aside{max-width:none;flex-basis:100%}
+  .stage{aspect-ratio:3/4;border-radius:14px;max-height:68dvh;width:100%}
+  .tabs{position:fixed;left:0;right:0;top:auto;bottom:0;transform:none;z-index:40;justify-content:space-around;gap:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:rgba(0,0,0,.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--hair);font-size:12px}
+  .tabs button{flex:1;height:48px}
+  .tabs button[aria-selected=true]::after{bottom:4px}
+  .controls{gap:12px;margin-top:16px}
+  .enrol{flex-direction:column;align-items:stretch;gap:8px;width:100%}
+  .livewrap{flex-direction:column-reverse;align-items:flex-end;gap:8px;font-size:13px}
+  .drops{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr} .figs{grid-template-columns:1fr}
+  .view-title{font-size:24px} .vverdict{font-size:30px}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+  /* guided enrolment takes the whole phone screen, like Face ID setup */
+  body.enrolling .camwrap{position:fixed;inset:0;z-index:60;height:100dvh;display:flex;flex-direction:column;background:#000}
+  body.enrolling .camwrap .stage{flex:1;aspect-ratio:auto;max-height:none;border-radius:0}
+  body.enrolling .gtop{top:max(16px,env(safe-area-inset-top))}
+  body.enrolling .gpanel{padding:18px 20px calc(22px + env(safe-area-inset-bottom))}
+}
+@media (max-width:360px){.pill{padding:0 12px;font-size:13px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="#F5F5F7" stroke-width="2"/><path d="M15 2 L19 13 M28 15 L17 17 M15 28 L11 17 M2 15 L13 13" stroke="#F5F5F7" stroke-width="2" stroke-linecap="round"/><circle cx="15" cy="15" r="3" fill="#FF4F8B"/></svg>
+      <span>Aperture</span>
+    </div>
+    <div id="status" role="status"><span class="off"><i></i>Connecting…</span></div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button role="tab" id="t-ver" aria-selected="false" data-tab="ver">COMPARE</button>
+    <button role="tab" id="t-rec" aria-selected="true" data-tab="rec">RECOGNISE</button>
+    <button role="tab" id="t-abt" aria-selected="false" data-tab="abt">HOW IT WORKS</button>
+  </nav>
+</header>
+
+<main>
+<!-- ============ RECOGNISE ============ -->
+<section id="rec" aria-label="Recognise">
+  <div class="cols">
+    <div class="cam-col">
+      <div class="camwrap" id="camwrap">
+        <div class="stage" id="stage">
+          <video id="cam" autoplay playsinline muted aria-label="Camera preview"></video>
+          <div class="thirds" aria-hidden="true"></div>
+          <canvas id="ov" aria-hidden="true"></canvas>
+          <div class="livebadge" id="livebadge" hidden><i></i>LIVE</div>
+
+          <div class="guide" id="guide">
+            <div class="oval" id="oval"><div class="ring" id="pfill"></div>
+              <div class="garrow" id="garrow" data-dir=""><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14l5-5 5 5M12 9v10" transform="translate(0 -1)"/></svg></div>
+            </div>
+            <div class="gtop">
+              <button class="gx" id="cancel" aria-label="Cancel enrolment"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+              <div class="gseg" id="gseg" aria-hidden="true"></div>
+              <span id="gcount">1/5</span>
+            </div>
+            <div class="gcap" aria-live="polite"><div id="ginstr"></div><div id="ghint"></div><div id="gnote"></div></div>
+          </div>
+
+          <div class="off" id="camoff"><div><b>Camera not available</b><div class="small" id="camerr">Allow camera access in your browser, or use Compare to test with photos.</div></div></div>
+          <div class="chip" id="chip" aria-live="polite">Starting camera…</div>
+        </div>
+
+        <div class="gpanel" id="gpanel" hidden>
+          <div class="steps" id="steps"></div>
+          <div class="grow" id="gactions">
+            <span class="n" id="gshots">0 shots</span>
+            <div class="shutter-ghost" aria-hidden="true"><span></span></div>
+            <button class="pill sm" id="skip" style="justify-self:end">Skip</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls" id="controls">
+        <div class="enrol">
+          <button class="pill" id="guided">Guided enrol</button>
+          <button class="pill quiet" id="quick">Quick · 5</button>
+        </div>
+        <button class="shutter" id="ident" aria-label="Identify once"><span></span></button>
+        <div class="livewrap"><span id="livelab">Live mode</span><button class="switch" id="live" role="switch" aria-checked="false" aria-label="Live mode"></button></div>
+      </div>
+    </div>
+
+    <aside aria-label="Details">
+      <section class="card" aria-live="polite">
+        <div class="lab">Result</div>
+        <div id="result"><p class="emptyline">Enrol someone, then press the shutter to identify.</p></div>
+      </section>
+      <section class="card">
+        <div class="rowh"><span class="lab">Enrolled <span id="count"></span></span><button class="link" id="wipe">Delete all</button></div>
+        <label class="field" for="name">Name for next enrolment</label>
+        <input type="text" id="name" placeholder="e.g. Akbar" maxlength="40" autocomplete="off">
+        <ul class="people" id="people"></ul>
+      </section>
+      <p class="note">No liveness check: a printed photo can fool this. Faces are stored only in this browser — the server analyses each frame in memory and keeps nothing.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ COMPARE ============ -->
+<section id="ver" hidden aria-label="Compare two photos">
+  <h1 class="view-title">Are these the same person?</h1>
+  <p class="view-sub">Drop two photos, or tap to choose. Each photo is analysed and turned into an embedding; the two are compared with cosine similarity.</p>
+  <div class="drops">
+    <label class="drop" id="dropA" data-slot="a"><input type="file" accept="image/*"><span><span class="big">Photo A</span><small>tap or drop an image</small></span></label>
+    <label class="drop" id="dropB" data-slot="b"><input type="file" accept="image/*"><span><span class="big">Photo B</span><small>tap or drop an image</small></span></label>
+  </div>
+  <div id="vres"></div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="abt" hidden aria-label="How it works and results">
+  <h1 class="view-title">What happens to a face</h1>
+  <p class="view-sub">Nothing here is a black box: four steps, measured results on people the model never saw, and the limits.</p>
+  <div class="flow">
+    <div class="card"><b><em>1</em>Detect</b><span>YuNet finds the face and 5 landmarks.</span></div>
+    <div class="card"><b><em>2</em>Align</b><span>A similarity transform maps the landmarks to the standard 112×112 template.</span></div>
+    <div class="card"><b><em>3</em>Embed</b><span>A ResNet turns the crop into a 512-number, unit-length vector.</span></div>
+    <div class="card"><b><em>4</em>Compare</b><span>Cosine similarity of two vectors; a match if it is above the threshold.</span></div>
+  </div>
+  <div class="sect">
+    <h2>Measured results</h2><p class="sub">On held-out identities the model never saw in training.</p>
+    <div class="tiles" id="tiles"><div class="note">loading…</div></div>
+    <p class="note" id="aboutnote" style="margin-top:12px"></p>
+  </div>
+  <div class="sect">
+    <h2>Evidence</h2>
+    <div class="figs">
+      <img class="wide" src="/static/img/roc_curve.png" alt="ROC curve on test identities">
+      <img src="/static/img/cmc_curve.png" alt="CMC curve for identification">
+      <img src="/static/img/similarity_distribution.png" alt="Genuine versus impostor similarity distributions">
+      <img class="wide" src="/static/img/edge_benchmark.png" alt="Edge latency versus accuracy">
+    </div>
+  </div>
+  <div class="sect">
+    <h2>Please read: limits &amp; privacy</h2>
+    <ul class="limits">
+      <li><b>No liveness check.</b> A printed photo or a screen can fool any system built only on face embeddings. Do not use this to protect anything.</li>
+      <li><b>Strict threshold on purpose.</b> It is set for a 0.1% false-accept rate, so it will sometimes reject the real person in poor light or at odd angles. Enrolling in a few poses helps.</li>
+      <li><b>Accuracy varies</b> with lighting, pose, age and demographics; the training data (celebrity photos and synthetic faces) is not balanced.</li>
+      <li><b>Privacy.</b> The server keeps nothing — frames are processed in memory and discarded. Enrolled embeddings are stored in your browser’s local storage only; “Delete all” removes them.</li>
+      <li><b>Licence.</b> The weights were pre-trained on DigiFace-1M, which is research-use only, so this demo is non-commercial.</li>
+    </ul>
+  </div>
+</section>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const pct = (x, d = 1) => (x * 100).toFixed(d) + '%';
+const clamp01 = x => Math.max(0, Math.min(1, x));
+let THR = 0.442, ONLINE = false;
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  if (guided) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  for (const s of ['rec', 'ver', 'abt']) $(s).hidden = s !== b.dataset.tab;
+  if (b.dataset.tab === 'abt') loadAbout();
+  if (b.dataset.tab !== 'rec' && liveTimer) $('live').click();
+  window.scrollTo(0, 0);
+});
+
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3400); }
+
+/* ---------- API ---------- */
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.detail || r.statusText);
+  return j;
+}
+async function analyze(blob) {
+  const fd = new FormData(); fd.append('image', blob, 'f.jpg');
+  return api('/analyze', { method: 'POST', body: fd });
+}
+async function init() {
+  try {
+    const h = await api('/health'); THR = h.threshold; ONLINE = true;
+    const dev = (h.providers && h.providers[0] || 'CPU').replace('ExecutionProvider', '').toUpperCase();
+    $('status').innerHTML = '<span class="on"><i></i>Online</span><span class="hide-s">' + dev + '</span><span>Threshold <b>' + THR.toFixed(3) + '</b></span>';
+  } catch (e) { $('status').innerHTML = '<span class="off"><i></i>Server unreachable</span>'; }
+}
+
+/* ---------- local gallery (browser only) ---------- */
+const KEY = 'face.gallery.v1';
+function loadG() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+function saveG(g) { try { localStorage.setItem(KEY, JSON.stringify(g)); } catch (e) { toast('Could not save in this browser (storage blocked or full).'); } }
+let GALLERY = loadG();
+function unit(v) { const n = Math.hypot(...v) || 1; return v.map(x => x / n); }
+function dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+function template(embs) { const m = new Array(512).fill(0); for (const e of embs) for (let i = 0; i < 512; i++) m[i] += e[i]; return unit(m); }
+function matchAll(emb) {
+  return Object.entries(GALLERY).map(([name, p]) => ({ name, sim: dot(template(p.embs), emb) })).sort((a, b) => b.sim - a.sim);
+}
+function addShot(name, emb, thumb) {
+  const p = GALLERY[name] || (GALLERY[name] = { embs: [], thumb: null });
+  p.embs.push(emb); if (thumb && !p.thumb) p.thumb = thumb;
+}
+function avatar(p, name, idx) {
+  const a = el('div', 'av c' + (idx % 3));
+  if (p && p.thumb) { const i = el('img'); i.src = p.thumb; i.alt = ''; a.appendChild(i); } else a.textContent = (name || '?').trim().charAt(0).toUpperCase();
+  return a;
+}
+function renderPeople() {
+  const ul = $('people'); ul.innerHTML = ''; const names = Object.keys(GALLERY).sort();
+  $('count').textContent = names.length ? '· ' + names.length : '';
+  $('wipe').hidden = !names.length;
+  if (!names.length) { const li = el('li'); li.appendChild(el('div', 'empty', 'Nobody yet. Type a name, then use Guided enrol.')); ul.appendChild(li); return; }
+  names.forEach((n, k) => {
+    const li = el('li'); li.appendChild(avatar(GALLERY[n], n, k));
+    li.appendChild(el('span', 'nm', n)); li.appendChild(el('span', 'ct', GALLERY[n].embs.length + ' shots'));
+    const b = el('button', 'rm', '✕'); b.setAttribute('aria-label', 'Remove ' + n); b.onclick = () => { delete GALLERY[n]; saveG(GALLERY); renderPeople(); }; li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+$('wipe').onclick = () => { if (confirm('Delete every enrolled face from this browser?')) { GALLERY = {}; saveG(GALLERY); renderPeople(); } };
+function needName() {
+  const n = $('name'); toast('Type a name first.'); n.classList.remove('need'); void n.offsetWidth; n.classList.add('need');
+  n.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => n.focus({ preventScroll: true }), 300);
+}
+
+/* ---------- camera ---------- */
+const cam = $('cam'), chip = $('chip'), ov = $('ov');
+function setChip(text, cls) { chip.textContent = text; chip.className = 'chip' + (cls ? ' ' + cls : ''); }
+async function startCam() {
+  try {
+    cam.srcObject = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' }, audio: false });
+    setChip('Camera ready');
+  } catch (e) {
+    $('stage').classList.add('nocam'); setChip('No camera', 'bad');
+    $('camerr').textContent = (window.isSecureContext ? '' : 'The camera needs https or localhost. ') + (e && e.message || 'Permission denied.') + ' You can still use Compare with photos.';
+  }
+}
+function snap(maxW = 640) {   // un-mirrored frame, exactly what the model should see
+  const vw = cam.videoWidth, vh = cam.videoHeight, k = Math.min(1, maxW / vw);
+  const c = document.createElement('canvas'); c.width = Math.round(vw * k); c.height = Math.round(vh * k);
+  c.getContext('2d').drawImage(cam, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(b => r({ blob: b, canvas: c }), 'image/jpeg', 0.88));
+}
+function thumbOf(canvas, box) {   // 96x96 face thumbnail, kept only in this browser
+  const [bx, by, bw, bh] = box, W = canvas.width, H = canvas.height, s = Math.max(bw * W, bh * H) * 1.5;
+  const cx = (bx + bw / 2) * W, cy = (by + bh / 2) * H, t = document.createElement('canvas'); t.width = t.height = 96;
+  t.getContext('2d').drawImage(canvas, cx - s / 2, cy - s / 2, s, s, 0, 0, 96, 96); return t.toDataURL('image/jpeg', 0.8);
+}
+const COLORS = { ok: '#34D399', no: '#FBBF24', warn: '#FBBF24' };
+function drawBox(box, o) {   // map frame fractions -> mirrored, object-fit:cover display; o = {kind, tag, name, score}
+  const r = ov.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; ov.width = r.width * dpr; ov.height = r.height * dpr;
+  const g = ov.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, r.width, r.height);
+  if (!box || !cam.videoWidth) return;
+  const vw = cam.videoWidth, vh = cam.videoHeight, k = Math.max(r.width / vw, r.height / vh);
+  const ox = (vw * k - r.width) / 2, oy = (vh * k - r.height) / 2;
+  const x = r.width - ((box[0] + box[2]) * vw * k - ox), y = box[1] * vh * k - oy, w = box[2] * vw * k, h = box[3] * vh * k;
+  const col = COLORS[(o && o.kind) || 'ok'];
+  g.lineWidth = 2; g.strokeStyle = col; g.beginPath(); g.roundRect(x, y, w, h, 6); g.stroke();
+  if (!o) return;
+  const small = r.width < 520, tagF = '600 ' + (small ? 10 : 11) + 'px Inter, system-ui', nameF = '600 ' + (small ? 17 : 22) + 'px "Space Grotesk", system-ui', scoreF = '400 ' + (small ? 12 : 14) + 'px "Space Grotesk", system-ui';
+  g.font = tagF; const wt = g.measureText(o.tag).width + (o.tag.length * 1.1);
+  g.font = nameF; const wn = o.name ? g.measureText(o.name).width : 0;
+  g.font = scoreF; const ws = o.score ? g.measureText(o.score).width : 0;
+  const pad = small ? 10 : 14, cw = Math.max(wt, wn, ws) + pad * 2 + 3, ch = (small ? 14 : 18) + (o.name ? (small ? 22 : 28) : 0) + (o.score ? (small ? 16 : 20) : 0) + pad * 2 - 6;
+  let cx = x + w + 12; if (cx + cw > r.width - 6) cx = x - 12 - cw; if (cx < 6) cx = Math.max(6, Math.min(x + 8, r.width - cw - 6));
+  let cy = Math.max(6, Math.min(y, r.height - ch - 6));
+  g.fillStyle = 'rgba(0,0,0,.72)'; g.beginPath(); g.roundRect(cx, cy, cw, ch, 10); g.fill();
+  g.fillStyle = col; g.beginPath(); g.roundRect(cx, cy + 6, 3, ch - 12, 2); g.fill();
+  let ty = cy + pad + (small ? 8 : 10); g.textBaseline = 'alphabetic';
+  g.font = tagF; g.fillStyle = col; if (g.letterSpacing !== undefined) g.letterSpacing = '1.2px'; g.fillText(o.tag, cx + pad + 3, ty); if (g.letterSpacing !== undefined) g.letterSpacing = '0px';
+  if (o.name) { ty += small ? 21 : 26; g.font = nameF; g.fillStyle = '#F5F5F7'; g.fillText(o.name, cx + pad + 3, ty); }
+  if (o.score) { ty += small ? 16 : 19; g.font = scoreF; g.fillStyle = '#D4D4D8'; g.fillText(o.score, cx + pad + 3, ty); }
+}
+
+/* ---------- identification ---------- */
+function gauge(sim, thr) {
+  const g = el('div', 'gauge'), bars = el('div', 'gbars'), ok = sim >= thr;
+  for (let i = 0; i < 40; i++) {
+    const x = (i + 0.5) / 40, s = el('span'), filled = x <= sim;
+    s.style.background = x < thr ? (filled ? '#52525B' : '#2A2A2E') : (filled ? '#2E8F6A' : '#163A2D');
+    bars.appendChild(s);
+  }
+  g.appendChild(bars);
+  const t = clamp01(thr) * 100, th = el('div', 'gthr'); th.style.left = 'calc(' + t + '% - 1px)'; g.appendChild(th);
+  const tl = el('div', 'gthrlab', thr.toFixed(3)); tl.style.left = t + '%'; g.appendChild(tl);
+  const v = el('div', 'gval ' + (ok ? 'ok' : 'no')); v.style.left = clamp01(sim) * 100 + '%'; g.appendChild(v);
+  const ends = el('div', 'gends'); ends.appendChild(el('span', null, '0 · different')); ends.appendChild(el('span', null, '1 · identical')); g.appendChild(ends);
+  return g;
+}
+function showResult(best, ranked) {
+  const box = $('result'); box.innerHTML = '';
+  const ok = best.sim >= THR, sc = el('div', 'score'); sc.appendChild(el('b', null, best.sim.toFixed(2))); sc.appendChild(el('span', null, 'similarity')); box.appendChild(sc);
+  const s = el('p', 'sentence'); s.appendChild(document.createTextNode(ok ? 'Above the ' : 'Below the ')); s.appendChild(el('b', null, THR.toFixed(3))); s.appendChild(document.createTextNode(' threshold → '));
+  s.appendChild(el('b', 'verdict ' + (ok ? 'ok' : 'no'), ok ? best.name + ' ✓' : 'No match')); box.appendChild(s);
+  box.appendChild(gauge(best.sim, THR));
+  const cs = el('div', 'cands');
+  ranked.slice(0, 3).forEach((c, i) => {
+    const r = el('div', 'cand' + (i === 0 ? ' top' + (ok ? ' ok' : '') : '')); r.appendChild(el('span', 'nm', c.name));
+    const b = el('div', 'bar'), f = el('i'); f.style.width = clamp01(c.sim) * 100 + '%'; b.appendChild(f); r.appendChild(b); r.appendChild(el('span', 'v', c.sim.toFixed(2))); cs.appendChild(r);
+  });
+  box.appendChild(cs);
+}
+let busy = false, liveTimer = null, liveSince = 0;
+function problem(p) {
+  if (!p.face) return p.brightness < 55 ? 'Too dark — add some light' : "I can't see a face";
+  if (p.n_faces > 1) return 'Only one person, please';
+  if (p.box[2] < 0.14) return 'Move a bit closer';
+  return null;
+}
+async function identify(manual) {
+  if (busy) return; busy = true;
+  try {
+    if (!Object.keys(GALLERY).length) { setChip('Enrol someone first', 'bad'); if (manual) toast('Enrol someone first.'); return; }
+    const { blob } = await snap(), p = await analyze(blob), why = problem(p);
+    if (why) { drawBox(p.face ? p.box : null, { kind: 'warn', tag: why.toUpperCase() }); setChip(why, 'bad'); return; }
+    const ranked = matchAll(p.embedding), best = ranked[0], ok = best.sim >= THR;
+    drawBox(p.box, ok ? { kind: 'ok', tag: '✓ MATCH', name: best.name, score: best.sim.toFixed(2) } : { kind: 'no', tag: 'NO MATCH', name: 'Unknown', score: best.sim.toFixed(2) });
+    setChip(ok ? 'Recognised: ' + best.name : 'Unknown person', ok ? 'ok' : 'bad'); showResult(best, ranked);
+  } catch (e) { setChip(e.message, 'bad'); } finally { busy = false; }
+}
+$('ident').onclick = () => identify(true);
+function setLive(on) {
+  const sw = $('live'); sw.setAttribute('aria-checked', on); $('livebadge').hidden = !on;
+  if (on) { liveSince = Date.now(); identify(); liveTimer = setInterval(() => {
+      if (Date.now() - liveSince > 120000) { $('live').click(); toast('Live mode paused after 2 minutes to save server capacity.'); return; }
+      identify(); }, 800); }
+  else { clearInterval(liveTimer); liveTimer = null; drawBox(null); }
+}
+$('live').onclick = () => {
+  if (liveTimer) return setLive(false);
+  if (!Object.keys(GALLERY).length) return toast('Enrol someone first.');
+  setLive(true);
+};
+
+/* ---------- enrolment: quick ---------- */
+function setEnrolUI(on) {
+  for (const id of ['guided', 'quick', 'ident', 'live', 'name']) $(id).disabled = on;
+  $('guide').classList.toggle('on', on); $('stage').classList.toggle('guiding', on); $('gpanel').hidden = !on;
+  document.body.classList.toggle('enrolling', on);
+  if (on) window.scrollTo(0, 0);
+}
+$('quick').onclick = async () => {
+  const name = $('name').value.trim(); if (!name) return needName();
+  if (liveTimer) $('live').click(); setEnrolUI(false); $('quick').disabled = true; let ok = 0;
+  for (let i = 1; i <= 5; i++) {
+    setChip('Shot ' + i + ' of 5 — look at the camera');
+    try { const { blob, canvas } = await snap(), p = await analyze(blob); if (!problem(p)) { addShot(name, p.embedding, thumbOf(canvas, p.box)); ok++; } } catch (e) { toast(e.message); }
+    await new Promise(r => setTimeout(r, 550));
+  }
+  $('quick').disabled = false; saveG(GALLERY); renderPeople();
+  setChip(ok ? 'Enrolled ' + name + ' (' + ok + ' shots)' : 'No face found in any shot', ok ? 'ok' : 'bad');
+};
+
+/* ---------- enrolment: guided (Face-ID style) ---------- */
+const NEED_YAW = 0.20, NEED_PITCH = 0.07;   // change relative to the person's own straight-ahead pose
+const STEPS = [
+  { id: 'center', label: 'Straight', dir: '',      text: 'Look straight at the camera', hint: 'Keep your face inside the oval', shots: 3 },
+  { id: 'left',   label: 'Left',     dir: 'left',  text: 'Slowly turn your head to the LEFT', hint: 'Your own left — the picture is mirrored like a mirror', shots: 2 },
+  { id: 'right',  label: 'Right',    dir: 'right', text: 'Now slowly turn to the RIGHT', hint: 'Keep your eyes on the screen', shots: 2 },
+  { id: 'up',     label: 'Up',       dir: 'up',    text: 'Tilt your head UP slightly', hint: 'Chin up a little', shots: 2 },
+  { id: 'down',   label: 'Down',     dir: 'down',  text: 'Tilt your head DOWN slightly', hint: 'Chin down a little', shots: 2 },
+];
+let guided = null;
+function stepProgress(step, p, base) {
+  if (step.id === 'center') {
+    const d = Math.hypot((p.yaw - (base ? base.yaw : 0)) / 0.18, (p.pitch - (base ? base.pitch : 0.572)) / 0.09);
+    return d <= 1 ? 1 : Math.max(0, 1 - (d - 1));
+  }
+  const dy = p.yaw - base.yaw, dp = p.pitch - base.pitch;
+  if (step.id === 'left') return Math.max(0, dy) / NEED_YAW;       // nose toward image-right = the person's left
+  if (step.id === 'right') return Math.max(0, -dy) / NEED_YAW;
+  if (step.id === 'up') return Math.max(0, -dp) / NEED_PITCH;      // pitch ratio falls when the head tilts up
+  return Math.max(0, dp) / NEED_PITCH;
+}
+function guideUI(i, text, hint, prog, cls, doneSet, skipSet, shots) {
+  const s = STEPS[i], pr = clamp01(prog || 0);
+  $('garrow').dataset.dir = s.dir; $('ginstr').textContent = text || s.text;
+  $('ghint').textContent = (hint == null ? s.hint : hint) + (i > 0 && !text && pr > 0 && pr < 1 ? ' · ' + Math.round(pr * 100) + '%' : '');
+  $('pfill').style.setProperty('--p', Math.round(pr * 100)); $('oval').className = 'oval ' + (cls || '');
+  const seg = $('gseg'); seg.innerHTML = ''; STEPS.forEach((st, k) => seg.appendChild(el('span', doneSet.has(k) ? 'done' : skipSet.has(k) ? 'skip' : k === i ? 'cur' : '')));
+  $('gcount').textContent = (i + 1) + '/' + STEPS.length;
+  const c = $('steps'); c.innerHTML = ''; STEPS.forEach((st, k) => c.appendChild(el('span', 'step ' + (doneSet.has(k) ? 'ok' : skipSet.has(k) ? 'skip' : k === i ? 'cur' : 'pend'), st.label + (doneSet.has(k) ? ' ✓' : ''))));
+  $('gshots').textContent = shots + (shots === 1 ? ' shot' : ' shots');
+  const sk = [...skipSet].map(k => STEPS[k].label); $('gnote').textContent = sk.length ? sk.join(', ') + ' skipped. You can redo it later.' : '';
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+$('guided').onclick = async () => {
+  const name = $('name').value.trim(); if (!name) return needName();
+  if (liveTimer) $('live').click(); drawBox(null);
+  guided = { cancelled: false, skip: false }; setEnrolUI(true); setChip('Guided enrolment — follow the instructions');
+  const done = new Set(), skipSet = new Set(), skipped = []; let base = null, stored = 0, failure = null; const centre = [];
+  try {
+    for (let i = 0; i < STEPS.length && !guided.cancelled; i++) {
+      const st = STEPS[i]; guided.skip = false; let got = 0, streak = 0, last = 0; const t0 = Date.now();
+      guideUI(i, null, null, 0, '', done, skipSet, stored);
+      while (got < st.shots && !guided.cancelled && !guided.skip) {
+        if (Date.now() - t0 > 25000) { skipped.push(st.label); skipSet.add(i); break; }
+        let p; const { blob, canvas } = await snap();
+        try { p = await analyze(blob); } catch (e) { p = { face: false, brightness: 100 }; }
+        let prog = 0, text = null, hint = null, ok = false; const why = problem(p);
+        if (why) { text = why; hint = ''; }
+        else if (st.id === 'center' && Math.abs(p.box[0] + p.box[2] / 2 - 0.5) > 0.3) { text = 'Centre your face in the oval'; hint = ''; }
+        else { prog = stepProgress(st, p, base); ok = prog >= 1; }
+        streak = ok ? streak + 1 : 0; guideUI(i, text, hint, prog, ok ? 'good' : '', done, skipSet, stored);
+        if (streak >= 2 && Date.now() - last > 450) {        // confirmed twice in a row -> keep this frame's embedding
+          addShot(name, p.embedding, st.id === 'center' && got === 0 ? thumbOf(canvas, p.box) : null);
+          got++; stored++; last = Date.now(); streak = 0; if (st.id === 'center') centre.push(p);
+          $('oval').className = 'oval done'; $('gshots').textContent = stored + (stored === 1 ? ' shot' : ' shots'); await sleep(350);
+          if (st.id === 'center' && got === st.shots) {
+            const med = k => centre.map(c => c[k]).sort((a, b) => a - b)[Math.floor(centre.length / 2)]; base = { yaw: med('yaw'), pitch: med('pitch') };
+          }
+        }
+        await sleep(120);
+      }
+      if (st.id === 'center' && !base) throw new Error('Could not capture a straight-on view. Check light and camera, then try again.');
+      if (got >= st.shots) done.add(i); else if (guided.skip && !guided.cancelled) { skipped.push(st.label); skipSet.add(i); }
+    }
+  } catch (e) { failure = e.message; }
+  const cancelled = guided.cancelled; guided = null; setEnrolUI(false); saveG(GALLERY); renderPeople();
+  if (failure) { toast(failure); setChip('Enrolment stopped', 'bad'); }
+  else if (cancelled) { setChip('Enrolment cancelled (' + stored + ' shots kept)', 'bad'); }
+  else { setChip('Enrolled ' + name + ' ✓  (' + stored + ' shots)', 'ok'); toast(skipped.length ? 'Enrolled; skipped: ' + skipped.join(', ') : 'Enrolled ' + name + '. Now try the shutter.'); }
+};
+$('skip').onclick = () => { if (guided) guided.skip = true; };
+$('cancel').onclick = () => { if (guided) guided.cancelled = true; };
+
+/* ---------- compare two photos ---------- */
+const slots = { a: null, b: null };
+async function shrink(file, maxSide = 1280) {   // phone photos are several MB; serverless hosts cap request bodies at ~4.5 MB
+  try {
+    const bmp = await createImageBitmap(file), k = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+    if (k === 1 && file.size < 1.5e6) return file;
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(b => r(b || file), 'image/jpeg', 0.9));
+  } catch (e) { return file; }
+}
+function bindDrop(id, slot) {
+  const d = $(id), inp = d.querySelector('input');
+  const take = f => { if (f && f.type.startsWith('image/')) setSlot(d, slot, f); };
+  inp.onchange = () => take(inp.files[0]);
+  d.ondragover = e => { e.preventDefault(); d.classList.add('over'); }; d.ondragleave = () => d.classList.remove('over');
+  d.ondrop = e => { e.preventDefault(); d.classList.remove('over'); take(e.dataTransfer.files[0]); };
+}
+async function setSlot(d, slot, file) {
+  d.querySelectorAll('img,.tag').forEach(n => n.remove());
+  const img = el('img'); img.src = URL.createObjectURL(file); img.alt = 'Photo ' + slot.toUpperCase(); d.appendChild(img); d.appendChild(el('span', 'tag', slot.toUpperCase()));
+  slots[slot] = null; $('vres').innerHTML = '';
+  try {
+    const fd = new FormData(); fd.append('image', await shrink(file), 'photo.jpg'); const p = await api('/analyze', { method: 'POST', body: fd });
+    if (!p.face) throw new Error('No face found in photo ' + slot.toUpperCase() + '.');
+    if (p.n_faces > 1) throw new Error('Photo ' + slot.toUpperCase() + ' has several faces — the largest was used.');
+    slots[slot] = p.embedding;
+  } catch (e) { $('vres').appendChild(el('div', 'msgbox', e.message)); }
+  compare();
+}
+function compare() {
+  if (!slots.a || !slots.b) return;
+  const sim = dot(slots.a, slots.b), ok = sim >= THR, box = $('vres'); box.innerHTML = '';
+  const c = el('div', 'card vcard');
+  c.appendChild(el('div', 'lab', 'Verdict'));
+  c.appendChild(el('div', 'vverdict verdict ' + (ok ? 'ok' : 'no'), ok ? 'Same person' : 'Different people'));
+  c.appendChild(el('div', 'muted sentence', 'Cosine similarity ' + sim.toFixed(3) + ' vs threshold ' + THR.toFixed(3)));
+  c.appendChild(gauge(sim, THR));
+  c.appendChild(el('p', 'note', 'Operating point: 0.1% false-accept rate. A “different” answer for the same person usually means pose, blur or lighting differ a lot between the photos.'));
+  box.appendChild(c);
+}
+bindDrop('dropA', 'a'); bindDrop('dropB', 'b');
+
+/* ---------- how it works ---------- */
+let aboutLoaded = false;
+async function loadAbout() {
+  if (aboutLoaded) return; const box = $('tiles');
+  try {
+    const a = await api('/about'); if (!a.teacher) throw new Error('no results file'); aboutLoaded = true; box.innerHTML = '';
+    const tile = (v, l) => { const t = el('div', 'tile'); t.appendChild(el('div', 'v', v)); t.appendChild(el('div', 'l', l)); box.appendChild(t); };
+    tile(a.teacher.AUC.toFixed(4), 'ROC AUC, ResNet50 (' + a.test_pairs.toLocaleString() + ' test pairs)');
+    tile(pct(a.teacher.EER, 2), 'Equal error rate, ResNet50');
+    tile(pct(a.teacher['TAR@FAR=1%']), 'True accepts at 1% false accepts');
+    tile(pct(a.teacher.rank1_single), 'Rank-1 identification, 1 photo per person (' + a.test_identities + ' people)');
+    tile(pct(a.teacher.rank1_multi), 'Rank-1 with 3 photos per person');
+    if (a.served_model) {
+      tile(a.served_model.AUC.toFixed(4), 'ROC AUC of the model this demo runs (' + a.served_model.name + ')');
+      tile(a.served_model.size_MB + ' MB', 'Size of the model this demo runs');
+      tile(a.served_model.p50_ms_1thread + ' ms', 'Embedding time per face, 1 CPU thread (desktop)');
+    }
+    if (a.served_at_threshold) {
+      tile(pct(a.served_at_threshold.TAR), 'True accepts at this demo’s threshold (' + a.served_at_threshold.threshold.toFixed(2) + ')');
+      tile(pct(a.served_at_threshold.FAR, 2), 'False accepts at that threshold');
+    }
+    $('aboutnote').textContent = 'Numbers are read from results/evaluation_results.json. The threshold was chosen on separate validation identities, then applied unchanged to the test identities. Latency was measured on a desktop CPU, not on a phone or Raspberry Pi.';
+  } catch (e) { box.innerHTML = '<div class="note">Results file not available on this server.</div>'; }
+}
+
+init(); startCam(); renderPeople();
+{ const m = { verify: 't-ver', about: 't-abt' }[location.hash.slice(1)]; if (m) $(m).click(); }   // deep links: /#verify, /#about
+window.addEventListener('resize', () => { if (!liveTimer) drawBox(null); });
+</script>
+</body>
+</html>

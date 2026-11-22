@@ -1,0 +1,11 @@
+# Allow-list: the inference image needs only these files (keeps the build context ~25 MB instead of ~1 GB).
+*
+!common/__init__.py
+!common/align.py
+!common/onnx_runtime.py
+!api/app.py
+!api/engine.py
+!api/static/**
+!checkpoints/face_r18_int8.onnx
+!checkpoints/face_detection_yunet_2023mar.onnx
+!results/evaluation_results.json

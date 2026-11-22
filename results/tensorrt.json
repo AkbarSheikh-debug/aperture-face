@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "model": "face_r18",
+      "runtime": "TensorRT 11.5.0.63",
+      "precision": "FP16",
+      "device": "GPU",
+      "threads": null,
+      "size_MB": 48.5,
+      "p50_ms": 0.349,
+      "p95_ms": 0.42,
+      "test_AUC": 0.9945,
+      "TAR@FAR=1%": 0.9078,
+      "TAR@FAR=0.1%": 0.7458
+    },
+    {
+      "model": "face_r50",
+      "runtime": "TensorRT 11.5.0.63",
+      "precision": "FP16",
+      "device": "GPU",
+      "threads": null,
+      "size_MB": 75.5,
+      "p50_ms": 0.63,
+      "p95_ms": 0.771,
+      "test_AUC": 0.99775,
+      "TAR@FAR=1%": 0.9534,
+      "TAR@FAR=0.1%": 0.8454
+    }
+  ]
+}

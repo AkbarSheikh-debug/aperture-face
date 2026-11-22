@@ -1,0 +1,5 @@
+# Optional: TensorRT FP16 engine build (edge/build_tensorrt.py). On Jetson use the TensorRT shipped with JetPack.
+tensorrt-cu12==11.5.0.63
+onnxconverter-common==1.16.0
+# Optional: profiling
+py-spy==0.4.4

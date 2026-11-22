@@ -1,0 +1,20 @@
+# Edge model: ResNet18 student distilled from the ResNet50 submission model (teacher).
+name: r18_student
+teacher: checkpoints/best_model.pth
+student:
+  backbone: resnet18
+  emb_dim: 512
+  dropout: 0.2
+  keep_maxpool: false
+data: [digiface, lfw_train]       # training images only - val/test identities never seen
+images_per_epoch: 200000
+batch_size: 256
+epochs: 8
+optim: {lr: 0.1, momentum: 0.9, weight_decay: 0.0005, warmup_epochs: 1}
+loss:
+  cosine_weight: 1.0              # 1 - cos(student, teacher)   : match each embedding
+  relational_weight: 1.0          # MSE of in-batch similarity matrices : match the geometry used for verification
+augment: light
+num_workers: 10
+seed: 42
+out: checkpoints/r18_student.pth

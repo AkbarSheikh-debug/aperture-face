@@ -1,0 +1,27 @@
+# Python 3.12. Exact versions used to produce the results in this submission.
+# PyTorch with CUDA 12.8 (required for RTX 50-series / Blackwell GPUs; older GPUs work too):
+#   pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0
+torchvision==0.26.0
+numpy==2.5.4
+pillow==13.0.0
+opencv-python==5.1.0.95
+pandas==3.1.1
+scikit-learn==1.9.1
+matplotlib==3.11.2
+PyYAML==6.0.4
+tqdm==4.70.1
+ImageHash==4.3.2
+tensorboard==2.21.0
+reportlab==5.1.0
+pytest==9.2.0
+# export / edge runtime
+onnx==1.23.2
+onnxscript==0.7.2
+onnxruntime-gpu==1.32.0
+# serving
+fastapi==0.165.0
+uvicorn==0.54.0
+python-multipart==0.0.34
+requests==2.34.2

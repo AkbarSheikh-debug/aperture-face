@@ -1,0 +1,704 @@
+{
+  "pairs": {
+    "val": {
+      "positives": 1477,
+      "negatives": 1477,
+      "identities": 61,
+      "images": 378,
+      "positive_pool_size": 1477,
+      "identities_in_positives": 61,
+      "max_positive_pairs_one_identity": 435
+    },
+    "test": {
+      "positives": 5000,
+      "negatives": 5000,
+      "identities": 122,
+      "images": 1110,
+      "positive_pool_size": 7945,
+      "identities_in_positives": 122,
+      "max_positive_pairs_one_identity": 191
+    }
+  },
+  "verification_smoke": {
+    "threshold_free_test": {
+      "pairs": {
+        "genuine": 5000,
+        "impostor": 5000
+      },
+      "AUC": 0.75276778,
+      "AUC_95CI": [
+        0.743734524,
+        0.760884573
+      ],
+      "EER": 0.3158,
+      "EER_95CI": [
+        0.30767,
+        0.32602000000000003
+      ],
+      "EER_threshold_on_test": 0.1981626,
+      "TAR@FAR=1%": 0.1246,
+      "TAR@FAR=1%_95CI": [
+        0.107935,
+        0.138575
+      ],
+      "TAR@FAR=0.1%": 0.038,
+      "all_vs_all": {
+        "genuine": 7945,
+        "impostor": 607548,
+        "AUC": 0.7457516596657722,
+        "EER": 0.3176840780365009,
+        "TAR@FAR=1%": 0.11000629326620516,
+        "TAR@FAR=0.1%": 0.027061044682190057,
+        "TAR@FAR=0.01%": 0.007677784770295784
+      },
+      "score_stats": {
+        "genuine_mean": 0.264723958584526,
+        "genuine_std": 0.13429241806314846,
+        "impostor_mean": 0.1416132025730122,
+        "impostor_std": 0.11833920652824675
+      }
+    },
+    "val_thresholds": {
+      "eer": 0.17806422311280454,
+      "far_1e-2": 0.42304661870002747,
+      "far_1e-3": 0.538179874420166,
+      "max_f1": 0.06103648572
+    },
+    "test_at_val_thresholds": {
+      "eer": {
+        "threshold": 0.17806422311280454,
+        "TP": 3689,
+        "FP": 1901,
+        "TN": 3099,
+        "FN": 1311,
+        "TPR(TAR)": 0.7378,
+        "FPR(FAR)": 0.3802,
+        "FRR": 0.2622,
+        "precision": 0.6599284436493739,
+        "recall": 0.7378,
+        "f1": 0.6966949952785646,
+        "accuracy": 0.6788,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "far_1e-2": {
+        "threshold": 0.42304661870002747,
+        "TP": 599,
+        "FP": 46,
+        "TN": 4954,
+        "FN": 4401,
+        "TPR(TAR)": 0.1198,
+        "FPR(FAR)": 0.0092,
+        "FRR": 0.8802,
+        "precision": 0.9286821705426357,
+        "recall": 0.1198,
+        "f1": 0.21222320637732509,
+        "accuracy": 0.5553,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "far_1e-3": {
+        "threshold": 0.538179874420166,
+        "TP": 96,
+        "FP": 0,
+        "TN": 5000,
+        "FN": 4904,
+        "TPR(TAR)": 0.0192,
+        "FPR(FAR)": 0.0,
+        "FRR": 0.9808,
+        "precision": 1.0,
+        "recall": 0.0192,
+        "f1": 0.037676609105180524,
+        "accuracy": 0.5096,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "max_f1": {
+        "threshold": 0.06103648572,
+        "TP": 4686,
+        "FP": 3738,
+        "TN": 1262,
+        "FN": 314,
+        "TPR(TAR)": 0.9372,
+        "FPR(FAR)": 0.7476,
+        "FRR": 0.0628,
+        "precision": 0.5562678062678063,
+        "recall": 0.9372,
+        "f1": 0.6981525625744935,
+        "accuracy": 0.5948,
+        "val_threshold_source": "val pairs"
+      }
+    },
+    "final_threshold": {
+      "threshold": 0.538179874420166,
+      "TP": 96,
+      "FP": 0,
+      "TN": 5000,
+      "FN": 4904,
+      "TPR(TAR)": 0.0192,
+      "FPR(FAR)": 0.0,
+      "FRR": 0.9808,
+      "precision": 1.0,
+      "recall": 0.0192,
+      "f1": 0.037676609105180524,
+      "accuracy": 0.5096,
+      "val_threshold_source": "val all-vs-all impostors",
+      "operating_point": "FAR=0.1%",
+      "rule": "cosine >= 0.5382 -> Match ; cosine < 0.5382 -> Non-Match",
+      "f1_95CI": [
+        0.03136999748716443,
+        0.04534792806880374
+      ]
+    }
+  },
+  "identification_smoke": {
+    "single_shot": {
+      "gallery_identities": 122,
+      "gallery_images_per_identity": 1,
+      "probes": 988,
+      "rank1": 0.1882591093117409,
+      "rank5": 0.3643724696356275,
+      "rank10": 0.4726720647773279
+    },
+    "multi_shot_3": {
+      "gallery_identities": 122,
+      "gallery_images_per_identity": 3,
+      "probes": 744,
+      "rank1": 0.26881720430107525,
+      "rank5": 0.4959677419354839,
+      "rank10": 0.6129032258064516
+    },
+    "open_set": {
+      "enrolled_identities": 98,
+      "unknown_identities": 24,
+      "known_probes": 769,
+      "unknown_probes": 243,
+      "DIR@FAR=0.01": 0.010403120936280884,
+      "threshold@FAR=0.01": 0.5709813833236694,
+      "DIR@FAR=0.05": 0.02990897269180754,
+      "threshold@FAR=0.05": 0.5092485547065735,
+      "DIR@FAR=0.1": 0.044213263979193757,
+      "threshold@FAR=0.1": 0.4852041006088257
+    },
+    "retrieval_mAP": 0.16379057155901092
+  },
+  "verification": {
+    "threshold_free_test": {
+      "pairs": {
+        "genuine": 5000,
+        "impostor": 5000
+      },
+      "AUC": 0.9982330400000001,
+      "AUC_95CI": [
+        0.9978152929999999,
+        0.9986044940000001
+      ],
+      "EER": 0.020399999999999974,
+      "EER_95CI": [
+        0.017800000000000038,
+        0.023404999999999995
+      ],
+      "EER_threshold_on_test": 0.29173056,
+      "TAR@FAR=1%": 0.9642,
+      "TAR@FAR=1%_95CI": [
+        0.9542,
+        0.972205
+      ],
+      "TAR@FAR=0.1%": 0.8856,
+      "all_vs_all": {
+        "genuine": 7945,
+        "impostor": 607548,
+        "AUC": 0.998185293762181,
+        "EER": 0.01963499056010065,
+        "TAR@FAR=1%": 0.9607300188797986,
+        "TAR@FAR=0.1%": 0.833606041535557,
+        "TAR@FAR=0.01%": 0.6429200755191945
+      },
+      "score_stats": {
+        "genuine_mean": 0.5948655839647999,
+        "genuine_std": 0.13568023878152172,
+        "impostor_mean": 0.0030002410131167727,
+        "impostor_std": 0.13400995305210583
+      }
+    },
+    "val_thresholds": {
+      "eer": 0.24738405588396356,
+      "far_1e-2": 0.33590129017829895,
+      "far_1e-3": 0.4499370753765106,
+      "max_f1": 0.24910816705000002
+    },
+    "test_at_val_thresholds": {
+      "eer": {
+        "threshold": 0.24738405588396356,
+        "TP": 4945,
+        "FP": 205,
+        "TN": 4795,
+        "FN": 55,
+        "TPR(TAR)": 0.989,
+        "FPR(FAR)": 0.041,
+        "FRR": 0.011,
+        "precision": 0.9601941747572815,
+        "recall": 0.989,
+        "f1": 0.9743842364532019,
+        "accuracy": 0.974,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "far_1e-2": {
+        "threshold": 0.33590129017829895,
+        "TP": 4808,
+        "FP": 46,
+        "TN": 4954,
+        "FN": 192,
+        "TPR(TAR)": 0.9616,
+        "FPR(FAR)": 0.0092,
+        "FRR": 0.0384,
+        "precision": 0.9905232797692625,
+        "recall": 0.9616,
+        "f1": 0.9758473716257358,
+        "accuracy": 0.9762,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "far_1e-3": {
+        "threshold": 0.4499370753765106,
+        "TP": 4238,
+        "FP": 3,
+        "TN": 4997,
+        "FN": 762,
+        "TPR(TAR)": 0.8476,
+        "FPR(FAR)": 0.0006,
+        "FRR": 0.1524,
+        "precision": 0.9992926196651734,
+        "recall": 0.8476,
+        "f1": 0.9172167514338276,
+        "accuracy": 0.9235,
+        "val_threshold_source": "val all-vs-all impostors"
+      },
+      "max_f1": {
+        "threshold": 0.24910816705000002,
+        "TP": 4942,
+        "FP": 198,
+        "TN": 4802,
+        "FN": 58,
+        "TPR(TAR)": 0.9884,
+        "FPR(FAR)": 0.0396,
+        "FRR": 0.0116,
+        "precision": 0.9614785992217899,
+        "recall": 0.9884,
+        "f1": 0.9747534516765285,
+        "accuracy": 0.9744,
+        "val_threshold_source": "val pairs"
+      }
+    },
+    "final_threshold": {
+      "threshold": 0.4499370753765106,
+      "TP": 4238,
+      "FP": 3,
+      "TN": 4997,
+      "FN": 762,
+      "TPR(TAR)": 0.8476,
+      "FPR(FAR)": 0.0006,
+      "FRR": 0.1524,
+      "precision": 0.9992926196651734,
+      "recall": 0.8476,
+      "f1": 0.9172167514338276,
+      "accuracy": 0.9235,
+      "val_threshold_source": "val all-vs-all impostors",
+      "operating_point": "FAR=0.1%",
+      "rule": "cosine >= 0.4499 -> Match ; cosine < 0.4499 -> Non-Match",
+      "f1_95CI": [
+        0.9109513922233607,
+        0.9231601206616297
+      ]
+    }
+  },
+  "identification": {
+    "single_shot": {
+      "gallery_identities": 122,
+      "gallery_images_per_identity": 1,
+      "probes": 988,
+      "rank1": 0.9220647773279352,
+      "rank5": 0.9868421052631579,
+      "rank10": 0.9949392712550608
+    },
+    "multi_shot_3": {
+      "gallery_identities": 122,
+      "gallery_images_per_identity": 3,
+      "probes": 744,
+      "rank1": 0.9865591397849462,
+      "rank5": 0.9973118279569892,
+      "rank10": 0.9986559139784946
+    },
+    "open_set": {
+      "enrolled_identities": 98,
+      "unknown_identities": 24,
+      "known_probes": 769,
+      "unknown_probes": 243,
+      "DIR@FAR=0.01": 0.6449934980494149,
+      "threshold@FAR=0.01": 0.554334282875061,
+      "DIR@FAR=0.05": 0.8140442132639792,
+      "threshold@FAR=0.05": 0.4648454189300537,
+      "DIR@FAR=0.1": 0.8504551365409623,
+      "threshold@FAR=0.1": 0.43489763140678406
+    },
+    "retrieval_mAP": 0.9374023227950852
+  },
+  "onnx_export": {
+    "face_r50.onnx": {
+      "min_cosine_vs_pytorch": 0.9999998807907104,
+      "max_abs_diff": 1.7881393432617188e-07,
+      "n_images": 64
+    },
+    "face_r18.onnx": {
+      "min_cosine_vs_pytorch": 0.9999998807907104,
+      "max_abs_diff": 1.862645149230957e-07,
+      "n_images": 64
+    }
+  },
+  "error_analysis": {
+    "threshold": 0.4499370753765106,
+    "false_accepts": 3,
+    "false_rejects": 762,
+    "hardest_impostors": [
+      {
+        "a": "Colin Powell",
+        "b": "Mikhail Wehbe",
+        "cosine": 0.4732
+      },
+      {
+        "a": "Gil de Ferran",
+        "b": "Jiri Novak",
+        "cosine": 0.4592
+      },
+      {
+        "a": "Monica Seles",
+        "b": "Padraig Harrington",
+        "cosine": 0.4521
+      },
+      {
+        "a": "Gloria Macapagal Arroyo",
+        "b": "Sachiko Yamada",
+        "cosine": 0.4391
+      },
+      {
+        "a": "Robert Blake",
+        "b": "Zoran Djindjic",
+        "cosine": 0.4354
+      },
+      {
+        "a": "Arianna Huffington",
+        "b": "Christine Todd Whitman",
+        "cosine": 0.4238
+      },
+      {
+        "a": "Antonio Palocci",
+        "b": "Joseph Estrada",
+        "cosine": 0.422
+      },
+      {
+        "a": "Joe Lieberman",
+        "b": "Thomas OBrien",
+        "cosine": 0.4166
+      }
+    ],
+    "hardest_genuine": [
+      {
+        "person": "Gil de Ferran",
+        "cosine": 0.0875
+      },
+      {
+        "person": "Gil de Ferran",
+        "cosine": 0.1009
+      },
+      {
+        "person": "Juan Pablo Montoya",
+        "cosine": 0.1064
+      },
+      {
+        "person": "Zhang Ziyi",
+        "cosine": 0.1143
+      },
+      {
+        "person": "Juan Pablo Montoya",
+        "cosine": 0.1401
+      },
+      {
+        "person": "Thabo Mbeki",
+        "cosine": 0.1456
+      },
+      {
+        "person": "Laura Bush",
+        "cosine": 0.1471
+      },
+      {
+        "person": "Juan Pablo Montoya",
+        "cosine": 0.1517
+      }
+    ]
+  },
+  "edge_threshold": {
+    "model": "face_r18_int8.onnx",
+    "operating_point": "FAR=0.1%",
+    "threshold": 0.44233426451683044,
+    "calibrated_on": "val all-vs-all",
+    "test_at_threshold": {
+      "threshold": 0.44233426451683044,
+      "TP": 3850,
+      "FP": 8,
+      "TN": 4992,
+      "FN": 1150,
+      "TPR(TAR)": 0.77,
+      "FPR(FAR)": 0.0016,
+      "FRR": 0.23,
+      "precision": 0.997926386728875,
+      "recall": 0.77,
+      "f1": 0.8692707157371867,
+      "accuracy": 0.8842
+    }
+  },
+  "edge": {
+    "rows": [
+      {
+        "model": "R50",
+        "runtime": "PyTorch",
+        "precision": "FP32",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 149.6,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 6.02,
+        "p95_ms": 6.35,
+        "test_AUC": 0.99775,
+        "TAR@FAR=1%": 0.9544,
+        "TAR@FAR=0.1%": 0.8454,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R50",
+        "runtime": "ONNX Runtime",
+        "precision": "FP32",
+        "device": "CPU",
+        "threads": 1,
+        "size_MB": 149.6,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 27.76,
+        "p95_ms": 28.03,
+        "test_AUC": 0.99775,
+        "TAR@FAR=1%": 0.9544,
+        "TAR@FAR=0.1%": 0.8454,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R50",
+        "runtime": "ONNX Runtime",
+        "precision": "FP32",
+        "device": "CPU",
+        "threads": 4,
+        "size_MB": 149.6,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 8.41,
+        "p95_ms": 8.55,
+        "test_AUC": 0.99775,
+        "TAR@FAR=1%": 0.9544,
+        "TAR@FAR=0.1%": 0.8454,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R50",
+        "runtime": "ONNX Runtime CUDA",
+        "precision": "FP32",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 149.6,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 1.96,
+        "p95_ms": 2.07,
+        "test_AUC": 0.99775,
+        "TAR@FAR=1%": 0.9544,
+        "TAR@FAR=0.1%": 0.8454,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R50",
+        "runtime": "ONNX Runtime",
+        "precision": "INT8",
+        "device": "CPU",
+        "threads": 1,
+        "size_MB": 38.0,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 8.05,
+        "p95_ms": 8.15,
+        "test_AUC": 0.99782,
+        "TAR@FAR=1%": 0.9576,
+        "TAR@FAR=0.1%": 0.8478,
+        "parity_cos": 0.9977
+      },
+      {
+        "model": "R50",
+        "runtime": "ONNX Runtime",
+        "precision": "INT8",
+        "device": "CPU",
+        "threads": 4,
+        "size_MB": 38.0,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6,
+        "p50_ms": 3.04,
+        "p95_ms": 3.26,
+        "test_AUC": 0.99782,
+        "TAR@FAR=1%": 0.9576,
+        "TAR@FAR=0.1%": 0.8478,
+        "parity_cos": 0.9977
+      },
+      {
+        "model": "R18",
+        "runtime": "PyTorch",
+        "precision": "FP32",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 96.0,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 2.67,
+        "p95_ms": 2.94,
+        "test_AUC": 0.9945,
+        "TAR@FAR=1%": 0.9076,
+        "TAR@FAR=0.1%": 0.7462,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R18",
+        "runtime": "ONNX Runtime",
+        "precision": "FP32",
+        "device": "CPU",
+        "threads": 1,
+        "size_MB": 96.1,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 12.5,
+        "p95_ms": 12.74,
+        "test_AUC": 0.9945,
+        "TAR@FAR=1%": 0.9076,
+        "TAR@FAR=0.1%": 0.7462,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R18",
+        "runtime": "ONNX Runtime",
+        "precision": "FP32",
+        "device": "CPU",
+        "threads": 4,
+        "size_MB": 96.1,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 4.09,
+        "p95_ms": 4.23,
+        "test_AUC": 0.9945,
+        "TAR@FAR=1%": 0.9076,
+        "TAR@FAR=0.1%": 0.7462,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R18",
+        "runtime": "ONNX Runtime CUDA",
+        "precision": "FP32",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 96.1,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 1.12,
+        "p95_ms": 1.24,
+        "test_AUC": 0.9945,
+        "TAR@FAR=1%": 0.9076,
+        "TAR@FAR=0.1%": 0.7462,
+        "parity_cos": 1.0
+      },
+      {
+        "model": "R18",
+        "runtime": "ONNX Runtime",
+        "precision": "INT8",
+        "device": "CPU",
+        "threads": 1,
+        "size_MB": 24.2,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 3.41,
+        "p95_ms": 3.49,
+        "test_AUC": 0.99444,
+        "TAR@FAR=1%": 0.9056,
+        "TAR@FAR=0.1%": 0.7502,
+        "parity_cos": 0.9979
+      },
+      {
+        "model": "R18",
+        "runtime": "ONNX Runtime",
+        "precision": "INT8",
+        "device": "CPU",
+        "threads": 4,
+        "size_MB": 24.2,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0,
+        "p50_ms": 1.1,
+        "p95_ms": 1.16,
+        "test_AUC": 0.99444,
+        "TAR@FAR=1%": 0.9056,
+        "TAR@FAR=0.1%": 0.7502,
+        "parity_cos": 0.9979
+      },
+      {
+        "model": "R18",
+        "runtime": "TensorRT 11.5.0.63",
+        "precision": "FP16",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 48.5,
+        "p50_ms": 0.349,
+        "p95_ms": 0.42,
+        "test_AUC": 0.9945,
+        "TAR@FAR=1%": 0.9078,
+        "TAR@FAR=0.1%": 0.7458,
+        "params_M": 24.0,
+        "GMACs": 1.74,
+        "fp32_size_MB": 96.0
+      },
+      {
+        "model": "R50",
+        "runtime": "TensorRT 11.5.0.63",
+        "precision": "FP16",
+        "device": "GPU",
+        "threads": null,
+        "size_MB": 75.5,
+        "p50_ms": 0.63,
+        "p95_ms": 0.771,
+        "test_AUC": 0.99775,
+        "TAR@FAR=1%": 0.9534,
+        "TAR@FAR=0.1%": 0.8454,
+        "params_M": 37.4,
+        "GMACs": 4.06,
+        "fp32_size_MB": 149.6
+      }
+    ],
+    "pipeline": {
+      "image_size": "250x250 (LFW)",
+      "detector": "YuNet 2023mar (CPU)",
+      "embedder": "R18 INT8 (CPU, 4 threads)",
+      "detect_align_ms_p50": 1.55,
+      "embed_ms_p50": 1.64,
+      "total_ms_p50": 3.16,
+      "fps_estimate": 316.5
+    }
+  }
+}

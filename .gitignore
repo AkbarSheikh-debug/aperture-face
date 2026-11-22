@@ -1,0 +1,31 @@
+__pycache__/
+*.pyc
+.venv/
+../data/
+data/
+results/runs/
+results/scores_*.csv
+results/embeddings_*.npz
+results/allpairs_*.npz
+checkpoints/ablation_*.pth
+checkpoints/r50_digiface.pth
+checkpoints/*_fp16.engine
+checkpoints/trt_cache/
+api/embeddings.sqlite
+demo/gallery.npz
+checkpoints/v1_*.pth
+checkpoints/*_fp16.onnx
+checkpoints/face_r50.onnx
+checkpoints/face_r18.onnx
+
+# local environments, caches and secrets
+.venv-app/
+.pytest_cache/
+.env
+.env.*
+*.log
+# Vercel CLI project link + token (never share)
+deploy/vercel/.vercel/
+deploy/vercel/.env*
+# internal working notes
+docs/design/
