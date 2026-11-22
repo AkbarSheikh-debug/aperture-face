@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command to run the face-recognition web app on macOS / Linux:   ./run_app.sh   (optional: PORT=8080 ./run_app.sh)
+# One command to run the face-recognition web app on macOS / Linux:   ./run_app.sh   (optional: PORT=8080 NO_BROWSER=1 ./run_app.sh)
 # Creates a private virtual environment (.venv-app), installs the 6 runtime packages, starts the app and opens the browser.
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -16,5 +16,5 @@ echo "Installing packages (first run takes about a minute)..."
 
 URL="http://localhost:${PORT}"
 echo "Starting Aperture at ${URL}  (press Ctrl+C to stop)"
-( sleep 4; { command -v xdg-open >/dev/null && xdg-open "$URL"; } || { command -v open >/dev/null && open "$URL"; } || { command -v start >/dev/null && start "$URL"; } || true ) >/dev/null 2>&1 &
+if [ -z "${NO_BROWSER:-}" ]; then ( sleep 4; { command -v xdg-open >/dev/null && xdg-open "$URL"; } || { command -v open >/dev/null && open "$URL"; } || { command -v start >/dev/null && start "$URL"; } || true ) >/dev/null 2>&1 & fi
 exec "$VPY" -m uvicorn api.app:app --host 127.0.0.1 --port "$PORT"
