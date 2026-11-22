@@ -1,6 +1,7 @@
 # docker compose up --build     ->  http://localhost:8000
 # Builds the CPU-only image from this repo (no PyTorch, about 700 MB on disk). To use a published image instead:
-#   APERTURE_IMAGE=<dockerhub-user>/aperture-face:latest docker compose up
+#   APERTURE_IMAGE=akbardebug/aperture-face:latest docker compose up
+# Or without compose:  docker run -p 8000:8000 akbardebug/aperture-face
 services:
   aperture:
     image: ${APERTURE_IMAGE:-aperture-face:latest}

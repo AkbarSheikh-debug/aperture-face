@@ -25,7 +25,8 @@ It uses a ResNet50 that I fine-tuned to output 512-D L2-normalised embeddings, c
 |---|---|---|
 | **Windows** + Python 3.11+ | `.\run_app.ps1` | http://localhost:8000 (opens by itself) |
 | **macOS / Linux** + Python 3.11+ | `./run_app.sh` | http://localhost:8000 (opens by itself) |
-| **Docker** | `docker compose up --build` | http://localhost:8000 |
+| **Docker** (no clone, no Python) | `docker run -p 8000:8000 akbardebug/aperture-face` | http://localhost:8000 |
+| **Docker** (build from this repo) | `docker compose up --build` | http://localhost:8000 |
 
 If Windows says *"running scripts is disabled on this system"*, run `powershell -ExecutionPolicy Bypass -File .\run_app.ps1` instead (this changes nothing permanently). Add `-NoBrowser` (or `NO_BROWSER=1` on macOS/Linux) to skip opening the browser.
 
