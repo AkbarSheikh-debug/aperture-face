@@ -27,6 +27,8 @@ It uses a ResNet50 that I fine-tuned to output 512-D L2-normalised embeddings, c
 | **macOS / Linux** + Python 3.11+ | `./run_app.sh` | http://localhost:8000 (opens by itself) |
 | **Docker** | `docker compose up --build` | http://localhost:8000 |
 
+If Windows says *"running scripts is disabled on this system"*, run `powershell -ExecutionPolicy Bypass -File .\run_app.ps1` instead (this changes nothing permanently). Add `-NoBrowser` (or `NO_BROWSER=1` on macOS/Linux) to skip opening the browser.
+
 The Python launchers create their own virtual environment (`.venv-app`), install 6 small packages from [`requirements-app.txt`](requirements-app.txt) (no PyTorch, no GPU) and start the app. The model it serves ships in this repo (`checkpoints/face_r18_int8.onnx`, 24 MB). Browsers only allow the camera on `https://` or `localhost`, so use `localhost` rather than your PC's network address. To put it online for free, see [`deploy/README.md`](deploy/README.md).
 
 Everything below is the full assessment write-up: data, training, evaluation, edge deployment.
